@@ -8040,6 +8040,42 @@ body.dark-mode .registration-settings-direct-note{background:#172554;border-colo
       +'<button type="button" class="registration-guide-skip" id="registration-guide-skip">لاحقاً</button>'
       +'</div></div>';
     document.body.appendChild(overlay);
+    var frenchGuideVtt = 'WEBVTT\n\n00:00.500 --> 00:10.600\nPour vous inscrire sur la plateforme, ouvrez-la et ajoutez votre photo, votre numéro du baccalauréat, votre numéro national et votre adresse e-mail. Choisissez ensuite la moughataa où vous résidez.\n\n00:10.600 --> 00:21.000\nChoisissez le mode de paiement bancaire. Sélectionnez BPay, saisissez le code qui vous est affiché, puis validez. Un autre code apparaîtra.\n\n00:21.000 --> 00:24.900\nRetournez sur la plateforme, saisissez ce nouveau code, puis renseignez votre numéro bancaire.\n\n00:24.900 --> 00:34.200\nAprès confirmation du paiement, vous pourrez consulter votre attestation. Cliquez sur « Imprimer votre attestation » pour l’afficher.';
+    function guideIsFrench(){ return typeof currentLang !== 'undefined' && currentLang === 'fr'; }
+    function updateRegistrationGuideLanguage(){
+      var modal=document.getElementById('registration-guide-video-modal');
+      var overlay=document.getElementById(overlayId);
+      var video=document.getElementById('registration-guide-video');
+      if(!modal || !overlay || !video) return;
+      var fr=guideIsFrench();
+      modal.style.direction=fr?'ltr':'rtl';
+      var head=modal.querySelector('.registration-guide-head');
+      if(head) head.style.textAlign=fr?'left':'right';
+      var kicker=modal.querySelector('.registration-guide-kicker');
+      var title=document.getElementById('registration-guide-video-title');
+      var subtitle=modal.querySelector('.registration-guide-subtitle');
+      var continueBtn=document.getElementById('registration-guide-continue');
+      var skipBtn=document.getElementById('registration-guide-skip');
+      var closeBtn=document.getElementById('registration-guide-video-close');
+      if(kicker) kicker.innerHTML=fr?'<i class="fas fa-circle-play"></i> Guide du nouvel étudiant':'<i class="fas fa-circle-play"></i> دليل الطالب الجديد';
+      if(title) title.textContent=fr?'Comment s’inscrire à l’institut':'طريقة التسجيل في المعهد';
+      if(subtitle) subtitle.textContent=fr?'Regardez cette courte explication avant de commencer, puis accédez directement à la page d’inscription en ligne.':'شاهد الشرح المختصر قبل البدء، ثم انتقل مباشرة إلى صفحة التسجيل الإلكتروني.';
+      if(continueBtn) continueBtn.innerHTML=fr?'<i class="fas fa-arrow-right"></i> Continuer l’inscription':'<i class="fas fa-arrow-left"></i> متابعة التسجيل';
+      if(skipBtn) skipBtn.textContent=fr?'Plus tard':'لاحقاً';
+      if(closeBtn) closeBtn.setAttribute('aria-label',fr?'Fermer':'إغلاق');
+      video.setAttribute('aria-label',fr?'Vidéo explicative de l’inscription':'فيديو توضيحي لطريقة التسجيل');
+      var oldTrack=video.querySelector('track[data-registration-french-subtitles]');
+      if(oldTrack) oldTrack.remove();
+      if(fr){
+        var track=document.createElement('track');
+        track.kind='subtitles'; track.srclang='fr'; track.label='Français'; track.default=true;
+        track.setAttribute('data-registration-french-subtitles','true');
+        track.src='data:text/vtt;charset=utf-8,'+encodeURIComponent(frenchGuideVtt);
+        video.appendChild(track);
+        try{ track.track.mode='showing'; }catch(_){}
+      }
+    }
+    window.__registrationGuideUpdateLanguage=updateRegistrationGuideLanguage;
     var close=function(){
       var video=document.getElementById('registration-guide-video');
       overlay.classList.remove('is-visible'); overlay.setAttribute('aria-hidden','true');
@@ -8060,6 +8096,7 @@ body.dark-mode .registration-settings-direct-note{background:#172554;border-colo
   }
   function showGuide(){
     var overlay=ensureGuideModal();
+    if(typeof window.__registrationGuideUpdateLanguage==='function') window.__registrationGuideUpdateLanguage();
     overlay.classList.add('is-visible'); overlay.setAttribute('aria-hidden','false');
     document.body.classList.add('registration-guide-video-open');
     var close=document.getElementById('registration-guide-video-close');
@@ -8073,6 +8110,8 @@ body.dark-mode .registration-settings-direct-note{background:#172554;border-colo
     var wrapped=function(){return showGuide();};
     wrapped.__registrationGuideVideoWrapped=true;
     window.openRegistrationBrowser=wrapped;
+    var languageButton=document.getElementById('lang-toggle');
+    if(languageButton) languageButton.addEventListener('click',function(){ setTimeout(function(){ if(typeof window.__registrationGuideUpdateLanguage==='function') window.__registrationGuideUpdateLanguage(); },0); });
     document.addEventListener('keydown',function(e){
       var overlay=document.getElementById(overlayId);
       if(e.key==='Escape' && overlay && overlay.classList.contains('is-visible')) overlay._close();
